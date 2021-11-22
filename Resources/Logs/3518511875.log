@@ -1,0 +1,91 @@
+Sender: LSF System <lsfadmin@zhcc011>
+Subject: Job 768129: <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.25 -eta_train=0.056 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.2 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=3518511875> in cluster <ZHC2clusterLSF> Exited
+
+Job <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.25 -eta_train=0.056 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.2 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=3518511875> was submitted from host <zhcc022> by user <jbu> in cluster <ZHC2clusterLSF> at Tue Nov  2 14:07:41 2021
+Job was executed on host(s) <zhcc011>, in queue <prod.med>, as user <jbu> in cluster <ZHC2clusterLSF> at Tue Nov  2 14:07:42 2021
+</u/jbu> was used as the home directory.
+</u/jbu/Master-Thesis> was used as the working directory.
+Started at Tue Nov  2 14:07:42 2021
+Terminated at Tue Nov  2 14:08:42 2021
+Results reported at Tue Nov  2 14:08:42 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.25 -eta_train=0.056 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.2 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=3518511875
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   87.45 sec.
+    Max Memory :                                 2017 MB
+    Average Memory :                             1642.82 MB
+    Total Requested Memory :                     -
+    Delta Memory :                               -
+    Max Swap :                                   -
+    Max Processes :                              7
+    Max Threads :                                133
+    Run time :                                   61 sec.
+    Turnaround time :                            61 sec.
+
+The output (if any) follows:
+
+Loaded pretrained model from /ibm/gpfs-homes/jbu/Master-Thesis/Resources/cifar10_pretrained_models/resnet32.th
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:136: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate", UserWarning)
+ * Prec@1 93.900
+ * Prec@1 19.920
+ * Prec@1 20.820
+ * Prec@1 17.200
+ * Prec@1 20.100
+ * Noisy Prec@1 19.37
+After loading, with clipping@2.00 19.92 w/o 93.90 noisy: 19.37pm1.92
+current lr 2.00000e-02
+Epoch: [60][0/176]	Time 1.042 (1.042)	Data 0.464 (0.464)	Loss 3.0424 (3.0424)	Prec@1 82.031 (82.031)
+Epoch: [60][17/176]	Time 0.462 (0.494)	Data 0.001 (0.027)	Loss 2.4704 (2.7413)	Prec@1 76.172 (79.839)
+Epoch: [60][34/176]	Time 0.462 (0.481)	Data 0.001 (0.014)	Loss 1.8122 (2.5197)	Prec@1 77.734 (77.578)
+Epoch: [60][51/176]	Time 0.462 (0.475)	Data 0.001 (0.010)	Loss 1.7588 (2.2988)	Prec@1 83.203 (77.802)
+Epoch: [60][68/176]	Time 0.463 (0.473)	Data 0.001 (0.008)	Loss 1.4388 (2.1323)	Prec@1 83.984 (78.952)
+Traceback (most recent call last):
+  File "trainer_resnet.py", line 339, in <module>
+    main()
+  File "trainer_resnet.py", line 144, in main
+    train(train_loader, model, criterion, optimizer, epoch, args=args, clip_fn=clip_weights)
+  File "trainer_resnet.py", line 219, in train
+    epoch=epoch - args.start_epoch
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Losses/torch_loss.py", line 138, in compute_gradient_and_backward
+    X
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Losses/torch_loss.py", line 95, in _adversarial_loss
+    output_theta_star = self.model_theta_star(X)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/parallel/data_parallel.py", line 159, in forward
+    return self.module(*inputs[0], **kwargs[0])
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Architectures/cifar_resnet.py", line 111, in forward
+    out = self.layer3(out)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/container.py", line 117, in forward
+    input = module(input)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Architectures/cifar_resnet.py", line 78, in forward
+    out = self.bn2(self.conv2(out))
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/ibm/gpfs-homes/jbu/AIS/ais/nn.py", line 608, in forward
+    return self._conv_forward(input=input, weight=self.weight, padding=padding)
+  File "/ibm/gpfs-homes/jbu/AIS/ais/nn.py", line 640, in _conv_forward
+    weight = self._apply_noise(weight)
+  File "/ibm/gpfs-homes/jbu/AIS/ais/nn.py", line 183, in _apply_noise
+    weight = weight + noise.detach()
+KeyboardInterrupt

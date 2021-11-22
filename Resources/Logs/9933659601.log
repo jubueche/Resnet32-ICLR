@@ -1,0 +1,108 @@
+Sender: LSF System <lsfadmin@zhcc011>
+Subject: Job 768148: <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.25 -eta_train=0.026 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.1 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=9933659601> in cluster <ZHC2clusterLSF> Exited
+
+Job <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.25 -eta_train=0.026 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.1 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=9933659601> was submitted from host <zhcc022> by user <jbu> in cluster <ZHC2clusterLSF> at Tue Nov  2 14:09:21 2021
+Job was executed on host(s) <zhcc011>, in queue <prod.med>, as user <jbu> in cluster <ZHC2clusterLSF> at Tue Nov  2 14:09:22 2021
+</u/jbu> was used as the home directory.
+</u/jbu/Master-Thesis> was used as the working directory.
+Started at Tue Nov  2 14:09:22 2021
+Terminated at Tue Nov  2 14:13:13 2021
+Results reported at Tue Nov  2 14:13:13 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.25 -eta_train=0.026 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.1 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=9933659601
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   360.79 sec.
+    Max Memory :                                 2071 MB
+    Average Memory :                             1988.14 MB
+    Total Requested Memory :                     -
+    Delta Memory :                               -
+    Max Swap :                                   -
+    Max Processes :                              7
+    Max Threads :                                24
+    Run time :                                   235 sec.
+    Turnaround time :                            232 sec.
+
+The output (if any) follows:
+
+Loaded pretrained model from /ibm/gpfs-homes/jbu/Master-Thesis/Resources/cifar10_pretrained_models/resnet32.th
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:136: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate", UserWarning)
+ * Prec@1 93.900
+ * Prec@1 19.920
+ * Prec@1 20.820
+ * Prec@1 18.920
+ * Prec@1 20.440
+ * Noisy Prec@1 20.06
+After loading, with clipping@2.00 19.92 w/o 93.90 noisy: 20.06pm1.01
+current lr 2.00000e-02
+Epoch: [60][0/176]	Time 1.009 (1.009)	Data 0.505 (0.505)	Loss 1.9152 (1.9152)	Prec@1 79.297 (79.297)
+Epoch: [60][17/176]	Time 0.460 (0.500)	Data 0.001 (0.029)	Loss 1.6351 (1.9517)	Prec@1 79.688 (78.798)
+Epoch: [60][34/176]	Time 0.462 (0.483)	Data 0.001 (0.016)	Loss 1.2207 (1.7118)	Prec@1 82.422 (78.705)
+Epoch: [60][51/176]	Time 0.470 (0.477)	Data 0.001 (0.011)	Loss 1.1158 (1.5394)	Prec@1 82.422 (79.935)
+Epoch: [60][68/176]	Time 0.463 (0.474)	Data 0.001 (0.008)	Loss 0.9933 (1.4273)	Prec@1 86.328 (81.352)
+Epoch: [60][85/176]	Time 0.461 (0.472)	Data 0.001 (0.007)	Loss 1.0178 (1.3487)	Prec@1 88.281 (82.431)
+Epoch: [60][102/176]	Time 0.461 (0.471)	Data 0.001 (0.006)	Loss 0.9651 (1.2879)	Prec@1 89.844 (83.283)
+Epoch: [60][119/176]	Time 0.460 (0.469)	Data 0.001 (0.005)	Loss 0.9304 (1.2412)	Prec@1 87.109 (83.906)
+Epoch: [60][136/176]	Time 0.460 (0.468)	Data 0.001 (0.005)	Loss 0.9555 (1.2011)	Prec@1 88.672 (84.409)
+Epoch: [60][153/176]	Time 0.461 (0.467)	Data 0.001 (0.004)	Loss 0.8019 (1.1690)	Prec@1 90.234 (84.811)
+Epoch: [60][170/176]	Time 0.458 (0.467)	Data 0.000 (0.004)	Loss 0.8920 (1.1397)	Prec@1 90.625 (85.300)
+ * Prec@1 88.520
+ * Prec@1 88.220
+ * Prec@1 88.400
+ * Prec@1 88.440
+ * Noisy Prec@1 88.35
+	 * New best: 88.35333
+current lr 2.00000e-02
+Epoch: [61][0/176]	Time 0.956 (0.956)	Data 0.466 (0.466)	Loss 0.9387 (0.9387)	Prec@1 89.844 (89.844)
+Epoch: [61][17/176]	Time 0.462 (0.489)	Data 0.001 (0.027)	Loss 0.8929 (0.8633)	Prec@1 90.625 (89.692)
+Epoch: [61][34/176]	Time 0.462 (0.476)	Data 0.001 (0.014)	Loss 0.7993 (0.8452)	Prec@1 94.141 (89.877)
+Epoch: [61][51/176]	Time 0.463 (0.473)	Data 0.001 (0.010)	Loss 0.8023 (0.8420)	Prec@1 89.062 (90.024)
+Epoch: [61][68/176]	Time 0.461 (0.470)	Data 0.001 (0.008)	Loss 0.8042 (0.8437)	Prec@1 90.625 (89.957)
+Epoch: [61][85/176]	Time 0.463 (0.469)	Data 0.001 (0.007)	Loss 0.8661 (0.8432)	Prec@1 89.062 (89.839)
+Epoch: [61][102/176]	Time 0.461 (0.468)	Data 0.001 (0.006)	Loss 0.7761 (0.8399)	Prec@1 88.281 (89.707)
+Epoch: [61][119/176]	Time 0.463 (0.467)	Data 0.001 (0.005)	Loss 0.7733 (0.8315)	Prec@1 90.625 (89.821)
+Epoch: [61][136/176]	Time 0.460 (0.466)	Data 0.001 (0.005)	Loss 0.8179 (0.8253)	Prec@1 89.062 (89.867)
+Epoch: [61][153/176]	Time 0.462 (0.466)	Data 0.001 (0.004)	Loss 0.7519 (0.8239)	Prec@1 91.797 (89.854)
+Epoch: [61][170/176]	Time 0.459 (0.465)	Data 0.000 (0.004)	Loss 0.7198 (0.8190)	Prec@1 90.234 (89.917)
+ * Prec@1 88.540
+ * Prec@1 88.560
+ * Prec@1 88.440
+ * Prec@1 88.320
+ * Noisy Prec@1 88.44
+	 * New best: 88.44000
+current lr 2.00000e-02
+Epoch: [62][0/176]	Time 1.054 (1.054)	Data 0.556 (0.556)	Loss 0.7545 (0.7545)	Prec@1 92.578 (92.578)
+Epoch: [62][17/176]	Time 0.476 (0.495)	Data 0.001 (0.032)	Loss 0.6887 (0.7729)	Prec@1 94.531 (90.408)
+Epoch: [62][34/176]	Time 0.461 (0.481)	Data 0.001 (0.017)	Loss 0.7122 (0.7634)	Prec@1 92.578 (90.714)
+Epoch: [62][51/176]	Time 0.461 (0.474)	Data 0.001 (0.012)	Loss 0.7977 (0.7661)	Prec@1 89.844 (90.948)
+Epoch: [62][68/176]	Time 0.482 (0.472)	Data 0.001 (0.009)	Loss 0.6927 (0.7623)	Prec@1 92.578 (91.010)
+Epoch: [62][85/176]	Time 0.460 (0.470)	Data 0.001 (0.008)	Loss 0.8036 (0.7699)	Prec@1 89.844 (90.720)
+Traceback (most recent call last):
+  File "trainer_resnet.py", line 339, in <module>
+    main()
+  File "trainer_resnet.py", line 144, in main
+    train(train_loader, model, criterion, optimizer, epoch, args=args, clip_fn=clip_weights)
+  File "trainer_resnet.py", line 219, in train
+    epoch=epoch - args.start_epoch
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Losses/torch_loss.py", line 138, in compute_gradient_and_backward
+    X
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Losses/torch_loss.py", line 95, in _adversarial_loss
+    output_theta_star = self.model_theta_star(X)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/parallel/data_parallel.py", line 152, in forward
+    if t.device != self.src_device_obj:
+KeyboardInterrupt

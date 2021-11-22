@@ -1,0 +1,83 @@
+Sender: LSF System <lsfadmin@zhcc003>
+Subject: Job 768124: <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.1 -eta_train=0.037 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.2 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=8009876354> in cluster <ZHC2clusterLSF> Exited
+
+Job <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.1 -eta_train=0.037 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.2 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=8009876354> was submitted from host <zhcc022> by user <jbu> in cluster <ZHC2clusterLSF> at Tue Nov  2 14:07:40 2021
+Job was executed on host(s) <zhcc003>, in queue <prod.med>, as user <jbu> in cluster <ZHC2clusterLSF> at Tue Nov  2 14:07:41 2021
+</u/jbu> was used as the home directory.
+</u/jbu/Master-Thesis> was used as the working directory.
+Started at Tue Nov  2 14:07:41 2021
+Terminated at Tue Nov  2 14:08:42 2021
+Results reported at Tue Nov  2 14:08:42 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.1 -eta_train=0.037 -eta_mode=range -clipping_alpha=2.0 -attack_size_mismatch=0.2 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=8009876354
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   99.56 sec.
+    Max Memory :                                 2038 MB
+    Average Memory :                             1435.36 MB
+    Total Requested Memory :                     -
+    Delta Memory :                               -
+    Max Swap :                                   -
+    Max Processes :                              7
+    Max Threads :                                131
+    Run time :                                   66 sec.
+    Turnaround time :                            62 sec.
+
+The output (if any) follows:
+
+Loaded pretrained model from /ibm/gpfs-homes/jbu/Master-Thesis/Resources/cifar10_pretrained_models/resnet32.th
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:136: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate", UserWarning)
+ * Prec@1 93.900
+ * Prec@1 19.920
+ * Prec@1 20.880
+ * Prec@1 18.080
+ * Prec@1 20.360
+ * Noisy Prec@1 19.77
+After loading, with clipping@2.00 19.92 w/o 93.90 noisy: 19.77pm1.49
+current lr 2.00000e-02
+Epoch: [60][0/176]	Time 1.125 (1.125)	Data 0.455 (0.455)	Loss 1.5921 (1.5921)	Prec@1 81.250 (81.250)
+Epoch: [60][17/176]	Time 0.464 (0.504)	Data 0.001 (0.026)	Loss 1.1531 (1.4620)	Prec@1 88.281 (91.319)
+Epoch: [60][34/176]	Time 0.466 (0.485)	Data 0.001 (0.014)	Loss 1.2384 (1.3979)	Prec@1 87.109 (90.145)
+Epoch: [60][51/176]	Time 0.461 (0.478)	Data 0.001 (0.010)	Loss 1.0422 (1.3106)	Prec@1 89.844 (89.769)
+Epoch: [60][68/176]	Time 0.461 (0.474)	Data 0.001 (0.008)	Loss 0.9014 (1.2388)	Prec@1 92.969 (90.206)
+Epoch: [60][85/176]	Time 0.461 (0.473)	Data 0.001 (0.006)	Loss 1.0321 (1.1901)	Prec@1 90.234 (90.439)
+Traceback (most recent call last):
+  File "trainer_resnet.py", line 339, in <module>
+    main()
+  File "trainer_resnet.py", line 144, in main
+    train(train_loader, model, criterion, optimizer, epoch, args=args, clip_fn=clip_weights)
+  File "trainer_resnet.py", line 219, in train
+    epoch=epoch - args.start_epoch
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Losses/torch_loss.py", line 138, in compute_gradient_and_backward
+    X
+  File "/ibm/gpfs-homes/jbu/Master-Thesis/Losses/torch_loss.py", line 92, in _adversarial_loss
+    self.model_theta_star.load_state_dict({**model.state_dict(),**theta_star})
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1037, in load_state_dict
+    load(self)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1035, in load
+    load(child, prefix + name + '.')
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1035, in load
+    load(child, prefix + name + '.')
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1035, in load
+    load(child, prefix + name + '.')
+  [Previous line repeated 1 more time]
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1032, in load
+    state_dict, prefix, local_metadata, True, missing_keys, unexpected_keys, error_msgs)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/batchnorm.py", line 87, in _load_from_state_dict
+    missing_keys, unexpected_keys, error_msgs)
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/nn/modules/module.py", line 982, in _load_from_state_dict
+    param.copy_(input_param)
+KeyboardInterrupt
