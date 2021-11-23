@@ -9,7 +9,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 
 # - Import the adversarial loss
-from torch_loss import AdversarialLoss
+from torch_loss import AdversarialLoss, AWP_Loss
 
 def eval_test_set(
     test_dataloader,
@@ -135,10 +135,27 @@ if __name__ == '__main__':
         beta_robustness=0.25
     )
 
+    awp_loss = AWP_Loss(
+        model=cnn,
+        loss_func=torch.nn.CrossEntropyLoss(reduction="mean"),
+        device=device,
+        n_attack_steps=10,
+        mismatch_level=0.025,
+        initial_std=1e-3,
+        gamma=0.2,
+        eps_pga=0.1
+    )
+
     for epoch_id in range(N_EPOCHS):
         for idx,(X,y) in enumerate(train_dataloader):
             X, y = X.to(device), y.to(device)
-            robustness_loss = adv_loss.compute_gradient_and_backward(
+            # robustness_loss = adv_loss.compute_gradient_and_backward(
+            #     model=cnn,
+            #     X=X,
+            #     y=y
+            # )
+
+            robustness_loss = awp_loss.compute_gradient_and_backward(
                 model=cnn,
                 X=X,
                 y=y

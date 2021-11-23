@@ -7,7 +7,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import Architectures.cifar_resnet as cifar_resnet
-from Losses.torch_loss import AdversarialLoss
+from Losses.torch_loss import AdversarialLoss, AWP_Loss
 import Utils.cifar_dataloader as DataLoader
 from architectures import Resnet as arch
 from architectures import log
@@ -76,17 +76,30 @@ def main():
 
     nat_loss = nn.CrossEntropyLoss(reduction="mean")
 
-    criterion = AdversarialLoss(
-        model=model,
-        natural_loss=nat_loss,
-        robustness_loss=torch.nn.KLDivLoss(reduction="batchmean"),
-        device=device,
-        n_attack_steps=args.n_attack_steps,
-        mismatch_level=args.attack_size_mismatch,
-        initial_std=args.initial_std,
-        beta_robustness=args.beta_robustness,
-        burn_in=args.burn_in
-    )
+    if args.gamma > 0.0:
+        criterion = AWP_Loss(
+            model=model,
+            loss_func=nat_loss,
+            device=device,
+            n_attack_steps=args.n_attack_steps,
+            mismatch_level=args.attack_size_mismatch,
+            initial_std=args.initial_std,
+            gamma=args.gamma,
+            eps_pga=args.eps_pga,
+            burn_in=args.burn_in
+        )
+    else:
+        criterion = AdversarialLoss(
+            model=model,
+            natural_loss=nat_loss,
+            robustness_loss=torch.nn.KLDivLoss(reduction="batchmean"),
+            device=device,
+            n_attack_steps=args.n_attack_steps,
+            mismatch_level=args.attack_size_mismatch,
+            initial_std=args.initial_std,
+            beta_robustness=args.beta_robustness,
+            burn_in=args.burn_in
+        )
 
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer,

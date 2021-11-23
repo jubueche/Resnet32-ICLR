@@ -122,6 +122,8 @@ class Resnet:
         d = standard_defaults()
         d["n_attack_steps"]=10
         d["beta_robustness"]=0.0
+        d["gamma"]=0.0
+        d["eps_pga"]=0.0
         d["eta_train"]=0.0
         d["eta_mode"]="ind"
         d["clipping_alpha"]=0.0
