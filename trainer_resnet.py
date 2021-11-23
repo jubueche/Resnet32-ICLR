@@ -7,7 +7,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import Architectures.cifar_resnet as cifar_resnet
-from Losses.torch_loss import AdversarialLoss, AWP_Loss
+from Losses.torch_loss import AdversarialLoss, AWP_Loss, AMP_Loss
 import Utils.cifar_dataloader as DataLoader
 from architectures import Resnet as arch
 from architectures import log
@@ -87,6 +87,15 @@ def main():
             gamma=args.gamma,
             eps_pga=args.eps_pga,
             burn_in=args.burn_in
+        )
+    elif args.beta_robustness >= 999:
+        criterion = AMP_Loss(
+            model = model,
+            loss_func=nat_loss,
+            device = device,
+            n_attack_steps= args.n_attack_steps,
+            epsilon = args.attack_size_mismatch, #misnomer
+            inner_lr = args.inner_lr
         )
     else:
         criterion = AdversarialLoss(
