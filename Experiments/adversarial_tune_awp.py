@@ -24,7 +24,7 @@ class adversarial_tune_awp:
                                     "start_epoch":60, "pretrained":True, "epochs":200, "gamma":0.1})
         resnet = split(resnet, "eps_pga", eps_pgas)
         resnet = split(resnet, "seed", seeds)
-        return resnet + eta_train_vs_eta_inf.train_grid()
+        return eta_train_vs_eta_inf.train_grid()
 
     @staticmethod
     def visualize():
