@@ -2,7 +2,7 @@ import numpy as np
 import Architectures.cifar_resnet as cifar_resnet
 import torch
 torch.manual_seed(0)
-from ais.utils import Config
+#from ais.utils import Config
 import os
 import Utils.cifar_dataloader as DataLoader
 from datajuicer import cachable
