@@ -7,6 +7,7 @@ Easily extended to MNIST, CIFAR-100 and Imagenet.
 
 import torch
 import numpy as np
+from torch.utils import data
 
 from torchvision import datasets
 from torchvision import transforms
@@ -20,7 +21,8 @@ def get_train_valid_loader(data_dir,
                            valid_size=0.1,
                            shuffle=True,
                            num_workers=4,
-                           pin_memory=False):
+                           pin_memory=False,
+                           dataset="cifar10"):
     """
     Utility function for loading and returning train and valid
     multi-process iterators over the CIFAR-10 dataset.
@@ -74,13 +76,20 @@ def get_train_valid_loader(data_dir,
             normalize,
         ])
 
+    if dataset == "cifar10":
+        dataset = datasets.CIFAR10
+    elif dataset == "cifar100":
+        dataset = datasets.CIFAR100
+    else:
+        dataset = getattr(datasets, dataset)
+
     # load the dataset
-    train_dataset = datasets.CIFAR10(
+    train_dataset = dataset(
         root=data_dir, train=True,
         download=True, transform=train_transform,
     )
 
-    valid_dataset = datasets.CIFAR10(
+    valid_dataset = dataset(
         root=data_dir, train=True,
         download=True, transform=valid_transform,
     )
@@ -113,7 +122,8 @@ def get_test_loader(data_dir,
                     batch_size,
                     shuffle=True,
                     num_workers=4,
-                    pin_memory=False):
+                    pin_memory=False,
+                    dataset = "cifar10"):
     """
     Utility function for loading and returning a multi-process
     test iterator over the CIFAR-10 dataset.
@@ -144,7 +154,14 @@ def get_test_loader(data_dir,
         normalize,
     ])
 
-    dataset = datasets.CIFAR10(
+    if dataset == "cifar10":
+        dataset = datasets.CIFAR10
+    elif dataset == "cifar100":
+        dataset = datasets.CIFAR100
+    else:
+        dataset = getattr(datasets, dataset)
+
+    dataset = dataset(
         root=data_dir, train=False,
         download=True, transform=transform,
     )
