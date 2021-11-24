@@ -125,7 +125,7 @@ class Resnet:
         d["gamma"]=0.0
         d["eps_pga"]=0.0
         d["eta_train"]=0.0
-        d["inner_lr"] = 0.1,
+        d["inner_lr"] = 0.1
         d["eta_mode"]="ind"
         d["clipping_alpha"]=0.0
         d["attack_size_mismatch"]=0.2

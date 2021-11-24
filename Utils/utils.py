@@ -2,6 +2,7 @@ import numpy as np
 import Architectures.cifar_resnet as cifar_resnet
 import torch
 torch.manual_seed(0)
+from copy import deepcopy
 #from ais.utils import Config
 import os
 import Utils.cifar_dataloader as DataLoader
@@ -95,3 +96,37 @@ def pcm_acc_over_time(
         accs = _single_pcm_acc_over_time(model, times, test_loader)
         accuracies[rep,:] = accs
     return np.mean(accuracies, axis=0), np.std(accuracies, axis=0)
+
+def validate_noisy(val_loader, model, eta_inf, eta_mode, n_inf):
+    accs = torch.empty(size=(n_inf,))
+    for i in range(n_inf):
+        model_noisy = deepcopy(model)
+        with torch.no_grad():
+            for name,v in model_noisy.named_parameters():
+                if "bn" in name or "bias" in name : continue
+                noise = eta_inf * v.abs().max() * torch.randn_like(v) if eta_mode == "range"\
+                    else eta_inf * v.abs() * torch.randn_like(v)
+                v.add_(noise.detach())
+        accs[i] = get_acc(model_noisy, val_loader)
+    print(" * Noisy Prec@1 %.2f" % float(accs.mean()))
+    return (accs.mean(), accs.std())
+
+@cachable(dependencies = ["network_dict:cnn_session_id", "N_rep", "eta_inf", "eta_mode"])
+def noisy_test_acc(
+    network_dict,
+    data_dir,
+    N_rep,
+    eta_inf,
+    eta_mode
+):
+    model = cifar_resnet.__dict__[network_dict["architecture"]]()
+    state_dict_model = network_dict["checkpoint"]["state_dict"]
+    new_state_dict = {}
+    for k,v in state_dict_model.items():
+        new_state_dict[k[7:]] = v # - Remove module.
+    model = model.to(device)
+    model.eval()
+    model.load_state_dict(new_state_dict)
+    _,_,test_loader = get_dataloaders(network_dict, data_dir, batch_size=512)
+    return validate_noisy(test_loader, model, eta_inf, eta_mode, N_rep)
+

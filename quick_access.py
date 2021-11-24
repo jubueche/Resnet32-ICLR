@@ -8,8 +8,8 @@ from Experiments.adversarial_tune_awp import adversarial_tune_awp
 
 # fp_baseline.visualize()
 # eta_train_vs_eta_inf.visualize()
-# adversarial_tune.visualize()
+adversarial_tune.visualize()
 # pcm_sim_robustness.visualize()
 # vary_n_attack_steps.visualize()
 # fp_baseline_resnet9.visualize()
-adversarial_tune_awp.visualize()
+# adversarial_tune_awp.visualize()

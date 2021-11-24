@@ -1,9 +1,11 @@
 import numpy as np
 from architectures import Resnet
+from Utils.utils import noisy_test_acc
 from datajuicer import run, split, run, query
 from datajuicer.utils import configure
 from Experiments.fp_baseline import fp_baseline
 from Experiments.eta_train_vs_eta_inf import eta_train_vs_eta_inf
+from Experiments.adversarial_tune_awp import adversarial_tune_awp
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import matplotlib as mpl
@@ -14,7 +16,7 @@ eta_trains = [0.026,0.037,0.056,0.075,0.11]
 beta_robustnesses = [0.01,0.025,0.05,0.1]
 attack_size_mismatches = [0.01,0.025,0.05,0.1]
 eta_trains_str = ["2.6","3.7","5.6","7.5","11.0"]
-eta_modes = ["range","ind"]
+eta_modes = ["ind"]
 base_path = os.path.dirname(os.path.abspath(__file__))
 
 class adversarial_tune:
@@ -30,7 +32,7 @@ class adversarial_tune:
         resnet = split(resnet, "beta_robustness", beta_robustnesses)
         resnet = split(resnet, "attack_size_mismatch", attack_size_mismatches)
         resnet = split(resnet, "seed", seeds)
-        return resnet + eta_train_vs_eta_inf.train_grid()
+        return resnet + eta_train_vs_eta_inf.train_grid() + adversarial_tune_awp.train_grid()
 
     @staticmethod
     def visualize():
@@ -43,13 +45,26 @@ class adversarial_tune:
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
 
-        def plot_errorbar(ax, eta_trains, color, grid, eta_mode, beta_robustness, attack_size_mismatch, label=None):
+        def plot_errorbar(
+            ax,
+            eta_trains,
+            color,
+            grid,
+            eta_mode,
+            beta_robustness,
+            attack_size_mismatch,
+            gamma,
+            eps_pga,
+            label=None
+        ):
             accs = []; acc_stds = []
-            for j,eta in enumerate(eta_trains):
+            for eta in eta_trains:
                 eta_test_acc = np.mean(np.array(query(grid, "noisy_test_acc_mean",
-                    where={"eta_mode":eta_mode, "eta_train":eta, "beta_robustness":beta_robustness, "attack_size_mismatch":attack_size_mismatch})))
+                    where={"eta_mode":eta_mode, "eta_train":eta, "beta_robustness":beta_robustness,
+                    "attack_size_mismatch":attack_size_mismatch, "gamma":gamma, "eps_pga":eps_pga})))
                 eta_test_acc_std = np.mean(np.array(query(grid, "noisy_test_acc_std",
-                    where={"eta_mode":eta_mode, "eta_train":eta, "beta_robustness":beta_robustness, "attack_size_mismatch":attack_size_mismatch})))
+                    where={"eta_mode":eta_mode, "eta_train":eta, "beta_robustness":beta_robustness,
+                    "attack_size_mismatch":attack_size_mismatch, "gamma":gamma, "eps_pga":eps_pga})))
                 accs.append(eta_test_acc)
                 acc_stds.append(eta_test_acc_std)
             ax.errorbar(x=eta_trains, y=accs, yerr=acc_stds, color=color, label=label)
@@ -58,6 +73,35 @@ class adversarial_tune:
         green_vals = np.linspace(242. / 255., 0.3 ,num=len(beta_robustnesses))
         for i,eta_mode in enumerate(eta_modes):
             for j,attack_size_mismatch in enumerate(attack_size_mismatches):
+
+                # - Get the awp grid
+                # - Get the list of AWP models with this mismatch level
+                grid_awp = [g for g in grid if g["gamma"]>0.0 and g["attack_size_mismatch"]==attack_size_mismatch]
+
+                # - Split the grid and write to eta_train
+                grid_awp = split(grid_awp, "eta_train", eta_trains)
+                grid_awp = configure(grid_awp, {"mode":"direct"})
+
+                # - Recalculate the noisy test acc
+                grid_awp = run(
+                    grid_awp,
+                    noisy_test_acc,
+                    n_threads=1,
+                    run_mode="normal",
+                    store_key="noisy_test_acc")(
+                                        "{*}",
+                                        "{data_dir}",
+                                        25,
+                                        "{eta_train}",
+                                        "{eta_mode}"
+                                    )
+                for g in grid_awp:
+                    test_acc_mean = 100*g["noisy_test_acc"][0]
+                    test_acc_std = 100*g["noisy_test_acc"][1]
+                    g["noisy_test_acc_mean"] = test_acc_mean
+                    g["noisy_test_acc_std"] = test_acc_std
+
+
                 ax = axes[i,j]
                 ax.set_xticks(eta_trains)
                 ax.plot([eta_trains[0],eta_trains[-1]],2*[baseline_test_acc], linestyle="--", color="k", label="FP Baseline")
@@ -74,7 +118,21 @@ class adversarial_tune:
                         grid=grid,
                         eta_mode=eta_mode,
                         beta_robustness=beta_robustness,
+                        gamma=0.0,
+                        eps_pga=0.0,
                         attack_size_mismatch=attack_size_mismatch
+                    )
+                plot_errorbar(
+                        ax=ax,
+                        eta_trains=eta_trains,
+                        color="g",
+                        grid=grid_awp,
+                        eta_mode=eta_mode,
+                        beta_robustness=0.0,
+                        attack_size_mismatch=attack_size_mismatch,
+                        gamma=0.1,
+                        eps_pga=0.001,
+                        label=r"AWP ($\epsilon_{pga}=0.001$)"
                     )
                 plot_errorbar(
                         ax=ax,
@@ -84,6 +142,8 @@ class adversarial_tune:
                         eta_mode=eta_mode,
                         beta_robustness=0.0,
                         attack_size_mismatch=0.2,
+                        gamma=0.0,
+                        eps_pga=0.0,
                         label=r"$\beta_{rob}=0.0$"
                     )
                 if j == 0:
