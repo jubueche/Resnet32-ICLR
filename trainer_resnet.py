@@ -62,7 +62,8 @@ def main():
         valid_size=0.1,
         shuffle=True,
         num_workers=args.workers,
-        pin_memory=("cuda" in device)
+        pin_memory=("cuda" in device),
+        dataset=args.dataset
     )
     args.print_freq = len(train_loader) // 10.
 
@@ -71,7 +72,8 @@ def main():
         batch_size=128,
         shuffle=False,
         num_workers=args.workers,
-        pin_memory=("cuda" in device)
+        pin_memory=("cuda" in device),
+        dataset = args.dataset
     )
 
     nat_loss = nn.CrossEntropyLoss(reduction="mean")
