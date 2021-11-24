@@ -286,3 +286,103 @@ class AWP_Loss():
             nat_loss.backward()
             
             return nat_loss.detach()
+
+
+class AMP_Loss():
+
+    def __init__(
+        self,
+        model,
+        loss_func,
+        device,
+        n_attack_steps,
+        epsilon,
+        inner_lr
+    ):
+    
+        self.model_theta = deepcopy(model)
+        self.model_theta_star = deepcopy(model)
+        self.loss_func = loss_func
+        self.device = device
+        self.n_attack_steps = n_attack_steps
+        self.epsilon = epsilon
+        self.inner_lr = inner_lr
+        self.steps_pga = 3
+
+    def _adversarial_loss(
+        self,
+        model,
+        X,
+        y
+    ):
+
+        # - Update the parameters of the "healthy" model
+        self.model_theta.load_state_dict(model.state_dict())
+
+        # - Initialize theta* with small gaussian noise
+        with torch.no_grad():
+            # - Compute theta*
+            theta_star = {}
+            for name, v in self.model_theta.named_parameters():
+                if "bn" in name: continue
+                theta_star[name] = v
+
+        # - PGA attack
+        for _ in range(self.n_attack_steps):
+            # - Load the initial theta_star
+            self.model_theta_star.load_state_dict({**model.state_dict(),**theta_star})
+            # - Pass input through net with adv. parameters and compute grad of robustness loss
+            output_theta_star = self.model_theta_star(X)
+            step_loss = self.loss_func(output_theta_star, y)
+            step_loss.backward()
+
+            # - Update theta*
+            for name,v in self.model_theta_star.named_parameters():
+                if "bn" in name: continue
+                
+                theta_star[name] = theta_star[name] + self.inner_lr * v.grad
+                diff = theta_star[name] - self.model_theta.state_dict[name]
+                factor = torch.min(1, self.epsilon / torch.norm(diff))
+                diff = diff * factor
+                theta_star[name] = self.model_theta.state_dict[name] + diff
+                v.grad = None # - Ensure gradients don't accumulate
+
+            # - After updating theta_star, load the new weights into the network
+            self.model_theta_star.load_state_dict({**model.state_dict(),**theta_star})
+
+
+        # - Load them into the network
+        self.model_theta_star.load_state_dict({**model.state_dict(),**theta_star})
+
+        # - Compute the loss and backprop
+        awp_loss = self.loss_func(self.model_theta_star(X), y)
+        awp_loss.backward()
+
+        # - Store the gradients and return them
+        awp_grads = {}
+        for name,v in self.model_theta_star.named_parameters():
+            awp_grads[name] = v.grad
+
+        return awp_loss, awp_grads
+
+
+    def compute_gradient_and_backward(
+        self,
+        model,
+        X,
+        y,
+        epoch=float("Inf")
+    ):
+        # - Get the adversarial loss (note: beta_robustness is not applied yet)
+        adv_loss, adv_loss_gradients = self._adversarial_loss(
+            model,
+            X,
+            y
+        )
+
+        # - Load the gradients from the AWP loss into the gradients of the standard model
+        for name,v in model.named_parameters():
+            if "bn" in name: continue
+            v.grad = adv_loss_gradients[name]
+        
+        return adv_loss
