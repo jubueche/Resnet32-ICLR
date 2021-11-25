@@ -12,12 +12,30 @@ import Utils.cifar_dataloader as DataLoader
 from architectures import Resnet as arch
 from architectures import log
 from copy import deepcopy
+from ais.utils import Config
 from Utils.utils import device
 
 def main():
     t_start = time.time()
     best_prec1 = 0.0
     args = arch.get_flags()
+
+    # - Create AIS configuration
+    config = {
+        "USE_ABS_MAX_FOR_GT": True,
+        "N_WSTD": 2.5,
+        "T0": 25.0,
+        "BITS_DAC":7,
+        "BITS_ADC":6,
+        "USE_ABS_MAX_FOR_INPUT_RANGE": False,
+        "PERCENTILE_INPUT_RANGE": 0.99995,
+        "SIZE_CROSSBAR": 256,
+        "N_STD_DAC": 4.0,
+        "N_STD_ADC": 4.0,
+        "ETA_TRAIN": args.eta_train,
+        "ETA_MODE": args.eta_mode
+    }
+    config = Config(**config)
 
     torch.manual_seed(args.seed)
     if "cuda" in device:
@@ -34,6 +52,7 @@ def main():
     checkpoint_save_path = os.path.join(models_path, f"{args.session_id}_checkpoint.th")
 
     model = cifar_resnet.__dict__[args.architecture]()
+    model.set_config(config)
     model = torch.nn.DataParallel(model).to(device)
     
     optimizer = torch.optim.SGD(

@@ -3,7 +3,7 @@ import Architectures.cifar_resnet as cifar_resnet
 import torch
 torch.manual_seed(0)
 from copy import deepcopy
-#from ais.utils import Config
+from ais.utils import Config
 import os
 import Utils.cifar_dataloader as DataLoader
 from datajuicer import cachable
@@ -38,8 +38,8 @@ def _single_pcm_acc_over_time(
 ):
     t0 = time.time()
     accs = np.empty(shape=(len(times),))
-    for t_idx,time in enumerate(times):
-        model.set_time(time)
+    for t_idx,t in enumerate(times):
+        model.set_time(t)
         accs[t_idx] = get_acc(model, test_loader)
     print("Took time %.4f" % (time.time()-t0))
     return accs

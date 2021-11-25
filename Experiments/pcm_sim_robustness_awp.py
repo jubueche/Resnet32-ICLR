@@ -42,17 +42,17 @@ class pcm_sim_robustness_awp:
     def visualize():
         grid = pcm_sim_robustness_awp.train_grid()
         grid = run(grid, "train", run_mode="load", store_key="*")("{*}")
-        grid = configure(grid, {"mode":"bsub"})
+        grid = configure(grid, {"mode":"direct"})
         times = [25.0, 3600.0, 86400.0, 2592000.0, 31536000.0]
         N_rep = 25
-        # grid = run(
-        #     grid,
-        #     pcm_acc_over_time,
-        #     n_threads=1,
-        #     run_mode="normal",
-        #     store_key="pcm_acc_over_time")(
-        #                         "{*}",
-        #                         "{data_dir}",
-        #                         N_rep,
-        #                         times
-        #                     )
+        grid = run(
+            grid,
+            pcm_acc_over_time,
+            n_threads=1,
+            run_mode="normal",
+            store_key="pcm_acc_over_time")(
+                                "{*}",
+                                "{data_dir}",
+                                N_rep,
+                                times
+                            )
