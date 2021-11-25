@@ -69,7 +69,7 @@ class adversarial_tune:
                 acc_stds.append(eta_test_acc_std)
             ax.errorbar(x=eta_trains, y=accs, yerr=acc_stds, color=color, label=label)
 
-        baseline_test_acc = np.max(np.mean(np.array(query(grid, "test_acc", where={"eta_train":0.0})),axis=0))
+        baseline_test_acc = np.max(np.mean(np.array(query(grid, "test_acc", where={"eta_train":0.0, "gamma":0.0})),axis=0))
         green_vals = np.linspace(242. / 255., 0.3 ,num=len(beta_robustnesses))
         for i,eta_mode in enumerate(eta_modes):
             for j,attack_size_mismatch in enumerate(attack_size_mismatches):
