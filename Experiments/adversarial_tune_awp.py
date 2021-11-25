@@ -10,7 +10,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 import os
 
-eps_pgas = [0.001,0.01]
+eps_pgas = [0.0,0.001,0.01]
 attack_size_mismatches = [0.01,0.025,0.05,0.1]
 eps_pgas_str = ["0.001","0.01","0.1","0.3"]
 base_path = os.path.dirname(os.path.abspath(__file__))

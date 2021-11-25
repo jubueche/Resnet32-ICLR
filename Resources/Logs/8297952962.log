@@ -1,0 +1,70 @@
+Sender: LSF System <lsfadmin@zhcc003>
+Subject: Job 777571: <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.0 -gamma=0.1 -eps_pga=0.0 -eta_train=0.0 -inner_lr=0.1 -eta_mode=ind -clipping_alpha=2.0 -attack_size_mismatch=0.1 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=8297952962> in cluster <ZHC2clusterLSF> Exited
+
+Job <python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.0 -gamma=0.1 -eps_pga=0.0 -eta_train=0.0 -inner_lr=0.1 -eta_mode=ind -clipping_alpha=2.0 -attack_size_mismatch=0.1 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=8297952962> was submitted from host <zhcc022> by user <jbu> in cluster <ZHC2clusterLSF> at Wed Nov 24 14:40:33 2021
+Job was executed on host(s) <zhcc003>, in queue <prod.med>, as user <jbu> in cluster <ZHC2clusterLSF> at Wed Nov 24 14:40:34 2021
+</u/jbu> was used as the home directory.
+</u/jbu/Resnet32-ICLR> was used as the working directory.
+Started at Wed Nov 24 14:40:34 2021
+Terminated at Wed Nov 24 14:40:55 2021
+Results reported at Wed Nov 24 14:40:55 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python3 trainer_resnet.py -seed=0 -batch_size=256 -weight_decay=0.0005 -momentum=0.9 -save_every=10 -lr=0.1 -n_attack_steps=3 -beta_robustness=0.0 -gamma=0.1 -eps_pga=0.0 -eta_train=0.0 -inner_lr=0.1 -eta_mode=ind -clipping_alpha=2.0 -attack_size_mismatch=0.1 -initial_std=0.001 -pretrained -burn_in=0 -workers=4 -n_epochs=300 -dataset=cifar10 -architecture=resnet32 -start_epoch=60 -data_dir=/dataP/jbu -session_id=8297952962
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   41.30 sec.
+    Max Memory :                                 2059 MB
+    Average Memory :                             813.00 MB
+    Total Requested Memory :                     -
+    Delta Memory :                               -
+    Max Swap :                                   -
+    Max Processes :                              7
+    Max Threads :                                131
+    Run time :                                   20 sec.
+    Turnaround time :                            22 sec.
+
+The output (if any) follows:
+
+Loaded pretrained model from /ibm/gpfs-homes/jbu/Resnet32-ICLR/Resources/cifar10_pretrained_models/resnet32.th
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:136: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate", UserWarning)
+ * Prec@1 94.280
+ * Prec@1 15.320
+ * Prec@1 15.320
+ * Prec@1 15.320
+ * Prec@1 15.320
+ * Noisy Prec@1 15.32
+After loading, with clipping@2.00 15.32 w/o 94.28 noisy: 15.32pm0.00
+current lr 2.00000e-02
+Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x1002857e34d0>
+Traceback (most recent call last):
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/utils/data/dataloader.py", line 1202, in __del__
+    def __del__(self):
+KeyboardInterrupt
+Epoch: [60][0/176]	Time 0.960 (0.960)	Data 0.483 (0.483)	Loss 1.4929 (1.4929)	Prec@1 85.156 (85.156)
+Traceback (most recent call last):
+  File "trainer_resnet.py", line 344, in <module>
+    main()
+  File "trainer_resnet.py", line 149, in main
+    train(train_loader, model, criterion, optimizer, epoch, args=args, clip_fn=clip_weights)
+  File "trainer_resnet.py", line 228, in train
+    optimizer.zero_grad()
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/optim/optimizer.py", line 184, in zero_grad
+    if p.grad is not None:
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/tensor.py", line 943, in grad
+    if type(self) is not Tensor and has_torch_function(relevant_args):
+  File "/u/jbu/.conda/envs/msc/lib/python3.7/site-packages/torch/overrides.py", line 1070, in has_torch_function
+    def has_torch_function(relevant_args: Iterable[Any]) -> bool:
+KeyboardInterrupt

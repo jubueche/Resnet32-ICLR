@@ -11,7 +11,7 @@ class amp_experiment:
 
     @staticmethod
     def train_grid():
-        seeds = [0]
+        seeds = [0,1]
         resnet = [Resnet.make()]
         resnet = configure(resnet, {"n_attack_steps":3, "batch_size":256, "clipping_alpha":2.0,
                                     "start_epoch":60, "pretrained":True, "epochs":200, "gamma":0.0})
