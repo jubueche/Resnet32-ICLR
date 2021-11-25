@@ -7,6 +7,7 @@ from copy import deepcopy
 import os
 import Utils.cifar_dataloader as DataLoader
 from datajuicer import cachable
+import time
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -35,10 +36,12 @@ def _single_pcm_acc_over_time(
     times,
     test_loader
 ):
+    t0 = time.time()
     accs = np.empty(shape=(len(times),))
     for t_idx,time in enumerate(times):
         model.set_time(time)
         accs[t_idx] = get_acc(model, test_loader)
+    print("Took time %.4f" % (time.time()-t0))
     return accs
 
 def get_acc(model, data_loader):

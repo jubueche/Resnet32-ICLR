@@ -46,7 +46,7 @@ class adversarial_tune_awp:
 
         def plot_errorbar(ax, eta_trains, color, grid, eta_mode, eps_pga, gamma, label=None):
             accs = []; acc_stds = []
-            for j,eta in enumerate(eta_trains):
+            for eta in eta_trains:
                 eta_test_acc = np.mean(np.array(query(grid, "noisy_test_acc_mean",
                     where={"eta_mode":eta_mode, "eta_train":eta, "eps_pga":eps_pga, "gamma":gamma})))
                 eta_test_acc_std = np.mean(np.array(query(grid, "noisy_test_acc_std",
