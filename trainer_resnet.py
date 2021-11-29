@@ -33,7 +33,7 @@ def main():
     model_save_path = os.path.join(models_path, f"{args.session_id}_model.th")
     checkpoint_save_path = os.path.join(models_path, f"{args.session_id}_checkpoint.th")
 
-    model = cifar_resnet.__dict__[args.architecture]()
+    model = cifar_resnet.__dict__[args.architecture](n_classes= 10 if args.dataset == "cifar10" else 100)
     model = torch.nn.DataParallel(model).to(device)
     
     optimizer = torch.optim.SGD(

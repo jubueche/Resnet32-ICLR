@@ -81,7 +81,7 @@ class BasicBlock(torch.nn.Module):
 
 
 class ResNet(torch.nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
+    def __init__(self, block, num_blocks, n_classes=10):
         super(ResNet, self).__init__()
         self.in_planes = 16
 
@@ -90,7 +90,7 @@ class ResNet(torch.nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        self.linear = torch.nn.Linear(64, num_classes)
+        self.linear = torch.nn.Linear(64, n_classes)
 
         self.apply(_weights_init)
 
@@ -114,28 +114,28 @@ class ResNet(torch.nn.Module):
         return out
 
 
-def resnet20():
-    return ResNet(BasicBlock, [3, 3, 3])
+def resnet20(n_classes=10):
+    return ResNet(BasicBlock, [3, 3, 3], n_classes=n_classes)
 
 
-def resnet32():
-    return ResNet(BasicBlock, [5, 5, 5])
+def resnet32(n_classes=10):
+    return ResNet(BasicBlock, [5, 5, 5], n_classes=n_classes)
 
 
-def resnet44():
-    return ResNet(BasicBlock, [7, 7, 7])
+def resnet44(n_classes=10):
+    return ResNet(BasicBlock, [7, 7, 7], n_classes=n_classes)
 
 
-def resnet56():
-    return ResNet(BasicBlock, [9, 9, 9])
+def resnet56(n_classes=10):
+    return ResNet(BasicBlock, [9, 9, 9], n_classes=n_classes)
 
 
-def resnet110():
-    return ResNet(BasicBlock, [18, 18, 18])
+def resnet110(n_classes=10):
+    return ResNet(BasicBlock, [18, 18, 18], n_classes=n_classes)
 
 
-def resnet1202():
-    return ResNet(BasicBlock, [200, 200, 200])
+def resnet1202(n_classes=10):
+    return ResNet(BasicBlock, [200, 200, 200], n_classes=n_classes)
 
 
 def test(net):
