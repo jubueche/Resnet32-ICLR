@@ -6,7 +6,8 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
-import Architectures.cifar_resnet as cifar_resnet
+import Architectures.cifar_resnet as cifar10_resnet
+import Architectures.cifar100_resnet as cifar100_resnet
 from Losses.torch_loss import AdversarialLoss, AWP_Loss, AMP_Loss
 import Utils.cifar_dataloader as DataLoader
 from architectures import Resnet as arch
@@ -33,7 +34,13 @@ def main():
     model_save_path = os.path.join(models_path, f"{args.session_id}_model.th")
     checkpoint_save_path = os.path.join(models_path, f"{args.session_id}_checkpoint.th")
 
-    model = cifar_resnet.__dict__[args.architecture](n_classes= 10 if args.dataset == "cifar10" else 100)
+    if args.dataset == "cifar10":
+        model = cifar10_resnet.__dict__[args.architecture]()
+    elif args.dataset == "cifar100":
+        model = cifar100_resnet.__dict__[args.architecture]()
+    else:
+        raise Exception("Unknown dataset")
+
     model = torch.nn.DataParallel(model).to(device)
     
     optimizer = torch.optim.SGD(

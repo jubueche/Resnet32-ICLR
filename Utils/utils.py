@@ -1,5 +1,6 @@
 import numpy as np
-import Architectures.cifar_resnet as cifar_resnet
+import Architectures.cifar_resnet as cifar10_resnet
+import Architectures.cifar100_resnet as cifar100_resnet
 import torch
 torch.manual_seed(0)
 from copy import deepcopy
@@ -122,7 +123,12 @@ def noisy_test_acc(
     eta_inf,
     eta_mode
 ):
-    model = cifar_resnet.__dict__[network_dict["architecture"]]()
+    if network_dict["dataset"] == "cifar10":
+        model = cifar10_resnet.__dict__[network_dict["architecture"]]()
+    elif network_dict["dataset"] == "cifar100":
+        model = cifar100_resnet.__dict__[network_dict["architecture"]]()
+    else:
+        raise Exception("Unknown dataset")
     state_dict_model = network_dict["checkpoint"]["state_dict"]
     new_state_dict = {}
     for k,v in state_dict_model.items():
