@@ -139,7 +139,8 @@ def main():
         for n,v in model.named_parameters():
             if "bn" in n or "bias" in n : continue
             clamp_val = float(args.clipping_alpha * torch.std(v.view(-1), dim=0))
-            v.clamp_(min=-clamp_val, max=clamp_val)
+            mean_v = float(torch.mean(v.view(-1), dim=0))
+            v.clamp_(min=mean_v-clamp_val, max=mean_v+clamp_val)
 
     # - Clip the weights initially. No-op if no clipping
     p1_nc = validate(val_loader, model, args=args)
@@ -267,7 +268,7 @@ def validate_noisy(val_loader, model, args, eta_inf, eta_mode, n_inf):
         with torch.no_grad():
             for name,v in model_noisy.named_parameters():
                 if "bn" in name or "bias" in name : continue
-                noise = eta_inf * v.abs().max() * torch.randn_like(v) if eta_mode == "range"\
+                noise = eta_inf * 0.5*(v.max()-v.min()) * torch.randn_like(v) if eta_mode == "range"\
                     else eta_inf * v.abs() * torch.randn_like(v)
                 v.add_(noise.detach())
         accs[i] = validate(val_loader, model_noisy, args)

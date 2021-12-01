@@ -108,7 +108,7 @@ def validate_noisy(val_loader, model, eta_inf, eta_mode, n_inf):
         with torch.no_grad():
             for name,v in model_noisy.named_parameters():
                 if "bn" in name or "bias" in name : continue
-                noise = eta_inf * v.abs().max() * torch.randn_like(v) if eta_mode == "range"\
+                noise = eta_inf * 0.5 * (v.max()-v.min()) * torch.randn_like(v) if eta_mode == "range"\
                     else eta_inf * v.abs() * torch.randn_like(v)
                 v.add_(noise.detach())
         accs[i] = get_acc(model_noisy, val_loader)

@@ -17,7 +17,7 @@ class cifar100_retrain_params:
         resnet = [Resnet.make()]
         resnet = configure(resnet,
             {
-                "eta_mode":"range", "eta_train":0.01, "batch_size":256,
+                "eta_mode":"range", "eta_train":0.0, "batch_size":256,
                 "start_epoch":60, "pretrained":True, "epochs":200, "dataset":"cifar100",
                 "architecture":"resnet34"
             }
