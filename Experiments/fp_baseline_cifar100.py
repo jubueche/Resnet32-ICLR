@@ -7,7 +7,7 @@ class fp_baseline_cifar100:
     def train_grid():
         seeds = [0]
         resnet = [Resnet.make()]
-        resnet = configure(resnet, {"batch_size":256, "architecture":"resnet34", "dataset":"cifar100"})
+        resnet = configure(resnet, {"architecture":"resnet34", "batch_size":256, "dataset":"cifar100", "pretrained":False})
         resnet = split(resnet, "seed", seeds)
         return resnet
 
