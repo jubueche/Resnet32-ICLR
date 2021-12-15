@@ -21,14 +21,12 @@ import importlib
 
 
 def launch(context):
-    path1 = os.path.join(context["resource_lock_directory"], f"{context['unique_id']}_context.dill")
+    path1 = pathlib.Path(os.path.join(context["resource_lock_directory"], f"{context['unique_id']}_context.dill")).resolve()
     with open(path1, "wb+") as f:
         dill.dump(context, f)
-    # path2 = os.path.join(context["resource_lock_directory"], f"{context['unique_id']}_func.dill")
-    # with open(path2, "wb+") as f:
-    #     dill.dump(func, f, recurse=True)
+    print("Dumped pickle!")
     if DEBUG:
-        command = f"python {__file__} -path {path1}"
+        command = f"python {pathlib.Path(__file__).resolve()} -path {path1}"
     else:
         command = f"djlaunch -path {path1}"
 
@@ -37,7 +35,9 @@ def launch(context):
     if context["mode"] == "process":
         subprocess.run(command.split())
     if context["mode"] == "bsub":
-        subprocess.run(["bsub", f'"{command}"', *context["mode_args"]])
+        run_string = " ".join(["bsub", *context["mode_args"], f'"{command}"'])
+        print(run_string)
+        subprocess.run(["bsub", *context["mode_args"], f'"{command}"'])
         while(True):
             if context["cache"].is_done(context["task_name"], context["task_version"], context["run_id"]):
                 break
@@ -63,6 +63,11 @@ class Namespace:
     pass
 
 def _launch(path):
+    print(f"cwd {os.getcwd()} path {path}")
+    if os.path.isfile(path):
+        print("_launch file exists")
+    else:
+        print("launch_ file does not exist")
     with open(path, "rb") as f:
         context = dill.load(f)
     if context["mode"] in ["process", "bsub"]:
@@ -122,6 +127,7 @@ def djlaunch():
     ap = argparse.ArgumentParser()
     ap.add_argument("-path", type=str)
     args = ap.parse_args()
+    print("Dj launch %s" % args.path)
     _launch(args.path)
     
 if __name__ == "__main__" and DEBUG:

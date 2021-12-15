@@ -1,6 +1,6 @@
 import datajuicer as dj
 if __name__ == "__main__":
-    dj.setup(max_workers=1)
+    dj.setup(max_workers=1, clean=True)
 
 from defaults import defaults
 from trainer_resnet import train

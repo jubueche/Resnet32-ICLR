@@ -65,7 +65,7 @@ def init(hyperparams, pretrained_path):
             }, f)
     print(f"Successfully initialized Model with run id {dj.run_id()}")
 
-@dj.Task.make(mode = "process", hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
+@dj.Task.make(mode = "bsub", mode_args=["-q","prod.short","-R","\"rusage[ngpus_excl_p=1]\"","-Is"], hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
 def train(hyperparams):
     t_start = time.time()
     base_path = os.path.dirname(os.path.abspath(__file__))
