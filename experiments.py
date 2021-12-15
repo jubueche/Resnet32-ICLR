@@ -30,8 +30,6 @@ def adversarial_tune_awp(seeds = [0, 1], eta_modes = ["range","ind"], eta_trains
     grid["hyperparams"]["batch_size"] = 1
     grid["train_run"] = grid.map(train).join()
 
-
-
 if __name__ == "__main__":
     fp_baseline = dj.Frame()
     fp_baseline["hyperparams"] = defaults

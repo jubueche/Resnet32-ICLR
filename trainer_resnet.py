@@ -65,7 +65,7 @@ def init(hyperparams, pretrained_path):
             }, f)
     print(f"Successfully initialized Model with run id {dj.run_id()}")
 
-@dj.Task.make(mode = "process", hyperparams = dj.Depend(num_workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
+@dj.Task.make(mode = "process", hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
 def train(hyperparams):
     t_start = time.time()
     base_path = os.path.dirname(os.path.abspath(__file__))
@@ -105,7 +105,7 @@ def train(hyperparams):
         next_run = train_epoch(run, hyperparams).join()
         if i % hyperparams["save_every"] != 0:
             run.delete()
-        with next_run.open("model.th", "rb") as f:
+        with next_run.open("checkpoint.th", "rb") as f:
             checkpoint = torch.load(f)
         model.load_state_dict(checkpoint["state_dict"])
 
@@ -117,6 +117,7 @@ def train(hyperparams):
         eta_val_acc_std.append(std_prec1)
 
         if prec1 > best_prec1:
+            best_prec1 = prec1
             print("\t * New best: %.5f" % best_prec1)
             checkpoint["val_acc"] = val_acc
             checkpoint["eta_val_acc"] = eta_val_acc
@@ -153,7 +154,7 @@ def train(hyperparams):
     # log("time_passed", float(time_passed / 3600.))
     # log("completed", True)
     
-@dj.Task.make(mode = "process", hyperparams = dj.Depend(num_workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore, n_epochs = dj.Ignore))
+@dj.Task.make(mode = "process", hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore, n_epochs = dj.Ignore))
 def train_epoch(previous_epoch, hyperparams):
     @torch.no_grad()
     def clip_weights(model):
