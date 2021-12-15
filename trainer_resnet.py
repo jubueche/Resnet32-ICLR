@@ -16,18 +16,6 @@ import datajuicer as dj
 import json
 import numpy as np
 
-def log(key, value):
-    with dj.open("training_results.json", "w+") as f:
-        contents = f.read()
-    if contents != "":
-        results = json.loads(contents)
-    if not key in results:
-        results[key] = []
-    results[key].append(value)
-    with dj.open("training_results.json", "w+") as f:
-        f.seek(0)
-        json.dump(results, f)
-
 @dj.Task.make(mode="process", hyperparams=dj.Depend("dataset", "architecture", "momentum", "seed", "weight_decay", "start_epoch"))
 def init(hyperparams, pretrained_path):
     if pretrained_path is not None:
@@ -82,7 +70,10 @@ def train(hyperparams):
     t_start = time.time()
     base_path = os.path.dirname(os.path.abspath(__file__))
     resources_path = os.path.join(base_path, "Resources")
-    run = init(hyperparams, os.path.join(resources_path,"%s_pretrained_models/%s.th" % (hyperparams["dataset"],hyperparams["architecture"]))).join()
+    path = None
+    if hyperparams["pretrained"] :
+        path = os.path.join(resources_path,"%s_pretrained_models/%s.th" % (hyperparams["dataset"],hyperparams["architecture"]))
+    run = init(hyperparams, path).join()
 
     if hyperparams["dataset"] == "cifar10":
         model = cifar10_resnet.__dict__[hyperparams["architecture"]]()
@@ -150,16 +141,17 @@ def train(hyperparams):
     # - Get normal test acc.
     prec1_test = validate(test_loader, model)
     # - Get noisy test acc. using eta_inf = eta_train
-    prec1_test_noisy_mean, prec1_test_noisy_std = validate_noisy(test_loader, model,  eta_inf=hyperparams["eta_train"], eta_mode=hyperparams["eta_mode"], n_inf=25) 
+    #prec1_test_noisy_mean, prec1_test_noisy_std = validate_noisy(test_loader, model,  eta_inf=hyperparams["eta_train"], eta_mode=hyperparams["eta_mode"], n_inf=25) 
     time_passed = time.time() - t_start
     print("Training finished in %.4f hours. Test accuracy is %.5f. Run Id = %s" %\
         (time_passed / 3600., float(prec1_test),dj.run_id()))
-    log("test_acc", float(prec1_test))
-    log("noisy_test_acc_mean", float(prec1_test_noisy_mean))
-    log("noisy_test_acc_std", float(prec1_test_noisy_std))
-    log("best_noisy_val_acc", float(best_prec1))
-    log("time_passed", float(time_passed / 3600.))
-    log("completed", True)
+    
+    # log("test_acc", float(prec1_test))
+    # log("noisy_test_acc_mean", float(prec1_test_noisy_mean))
+    # log("noisy_test_acc_std", float(prec1_test_noisy_std))
+    # log("best_noisy_val_acc", float(best_prec1))
+    # log("time_passed", float(time_passed / 3600.))
+    # log("completed", True)
     
 @dj.Task.make(mode = "process", hyperparams = dj.Depend(num_workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore, n_epochs = dj.Ignore))
 def train_epoch(previous_epoch, hyperparams):
