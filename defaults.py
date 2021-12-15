@@ -1,0 +1,27 @@
+defaults = {
+        "seed":0,
+        "batch_size":128,
+        "weight_decay":5e-4,
+        "momentum":0.9,
+        "save_every":10,
+        "lr":0.1,
+        "n_attack_steps":10,
+        "beta_robustness":0.0,
+        "gamma":0.0,
+        "eps_pga":0.0,
+        "eta_train":0.0,
+        "inner_lr": 0.1,
+        "eta_mode":"ind",
+        "clipping_alpha":0.0,
+        "attack_size_mismatch":0.2,
+        "initial_std":0.001,
+        "pretrained":True,
+        "burn_in":0,
+        "workers":4,
+        "n_epochs":300,
+        "dataset":"cifar10",
+        "architecture":"resnet32",
+        "start_epoch":0,
+        "data_dir":"~/Datasets"
+        }
+

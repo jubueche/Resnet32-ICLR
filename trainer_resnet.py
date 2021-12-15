@@ -10,115 +10,50 @@ import Architectures.cifar_resnet as cifar10_resnet
 import Architectures.cifar100_resnet as cifar100_resnet
 from Losses.torch_loss import AdversarialLoss, AWP_Loss, AMP_Loss
 import Utils.cifar_dataloader as DataLoader
-from architectures import Resnet as arch
-from architectures import log
 from copy import deepcopy
 from Utils.utils import device
+import datajuicer as dj
+import json
+import numpy as np
 
-def main():
-    t_start = time.time()
-    best_prec1 = 0.0
-    args = arch.get_flags()
+def log(key, value):
+    with dj.open("training_results.json", "w+") as f:
+        contents = f.read()
+    if contents != "":
+        results = json.loads(contents)
+    if not key in results:
+        results[key] = []
+    results[key].append(value)
+    with dj.open("training_results.json", "w+") as f:
+        f.seek(0)
+        json.dump(results, f)
 
-    torch.manual_seed(args.seed)
-    if "cuda" in device:
-        torch.cuda.manual_seed(args.seed)
-
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    resources_path = os.path.join(base_path, "Resources")
-    if not os.path.exists(resources_path):
-        os.mkdir(resources_path)
-    models_path = os.path.join(base_path, "Resources/Models")
-    if not os.path.exists(models_path):
-        os.mkdir(models_path)
-    model_save_path = os.path.join(models_path, f"{args.session_id}_model.th")
-    checkpoint_save_path = os.path.join(models_path, f"{args.session_id}_checkpoint.th")
-
-    if args.dataset == "cifar10":
-        model = cifar10_resnet.__dict__[args.architecture]()
-    elif args.dataset == "cifar100":
-        model = cifar100_resnet.__dict__[args.architecture]()
-    else:
-        raise Exception("Unknown dataset")
-
-    model = torch.nn.DataParallel(model).to(device)
-    
-    optimizer = torch.optim.SGD(
-        model.parameters(),
-        args.lr,
-        momentum=args.momentum,
-        nesterov=True,
-        weight_decay=args.weight_decay
-    )
-
-    if args.pretrained:
-        pretrained_path = os.path.join(resources_path,"%s_pretrained_models/%s.th" % (args.dataset,args.architecture))
+@dj.Task.make(mode="process", hyperparams=dj.Depend("dataset", "architecture", "momentum", "seed", "weight_decay", "start_epoch"))
+def init(hyperparams, pretrained_path):
+    if pretrained_path is not None:
+        print(f"Loading pretrained Model from path {pretrained_path}")
         if os.path.isfile(pretrained_path):
             checkpoint = torch.load(pretrained_path)
-            model.load_state_dict(checkpoint["state_dict"])
-            print("Loaded pretrained model from %s"%pretrained_path)
-        else:
-            print("No pretrained model found at %s"%pretrained_path)
-            sys.exit(0)
-
-    train_loader, val_loader = DataLoader.get_train_valid_loader(
-        data_dir=os.path.join(args.data_dir,args.dataset),
-        batch_size=args.batch_size,
-        augment=True,
-        random_seed=args.seed,
-        valid_size=0.1,
-        shuffle=True,
-        num_workers=args.workers,
-        pin_memory=("cuda" in device),
-        dataset=args.dataset
-    )
-    args.print_freq = len(train_loader) // 10.
-
-    test_loader = DataLoader.get_test_loader(
-        data_dir=os.path.join(args.data_dir,args.dataset),
-        batch_size=128,
-        shuffle=False,
-        num_workers=args.workers,
-        pin_memory=("cuda" in device),
-        dataset = args.dataset
-    )
-
-    nat_loss = nn.CrossEntropyLoss(reduction="mean")
-
-    if args.gamma > 0.0:
-        criterion = AWP_Loss(
-            model=model,
-            loss_func=nat_loss,
-            device=device,
-            n_attack_steps=args.n_attack_steps,
-            mismatch_level=args.attack_size_mismatch,
-            initial_std=args.initial_std,
-            gamma=args.gamma,
-            eps_pga=args.eps_pga,
-            burn_in=args.burn_in
-        )
-    elif args.beta_robustness >= 999:
-        criterion = AMP_Loss(
-            model = model,
-            loss_func=nat_loss,
-            device = device,
-            n_attack_steps= args.n_attack_steps,
-            epsilon = args.attack_size_mismatch, #misnomer
-            inner_lr = args.inner_lr
-        )
+    
+    if hyperparams["dataset"] == "cifar10":
+        model = cifar10_resnet.__dict__[hyperparams["architecture"]]()
+    elif hyperparams["dataset"] == "cifar100":
+        model = cifar100_resnet.__dict__[hyperparams["architecture"]]()
     else:
-        criterion = AdversarialLoss(
-            model=model,
-            natural_loss=nat_loss,
-            robustness_loss=torch.nn.KLDivLoss(reduction="batchmean"),
-            device=device,
-            n_attack_steps=args.n_attack_steps,
-            mismatch_level=args.attack_size_mismatch,
-            initial_std=args.initial_std,
-            beta_robustness=args.beta_robustness,
-            burn_in=args.burn_in
-        )
+        raise Exception("Unknown dataset")
+    model = torch.nn.DataParallel(model).to(device)
+    
+    model.load_state_dict(checkpoint["state_dict"])
 
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        hyperparams["lr"],
+        momentum=hyperparams["momentum"],
+        nesterov=True,
+        weight_decay=hyperparams["weight_decay"]
+    )
+    epoch = hyperparams["start_epoch"]
+    
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer,
         milestones=[60, 120, 160],
@@ -126,84 +61,196 @@ def main():
         last_epoch=-1
     )
     
-    for _ in range(args.start_epoch):
+    for _ in range(epoch):
         lr_scheduler.step()
+    
+    torch.manual_seed(hyperparams["seed"])
+    np.random.seed(hyperparams["seed"])
 
-    if args.architecture in ['resnet1202', 'resnet110']:
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = args.lr*0.1
+    with dj.open("checkpoint.th", "wb+") as f:
+        torch.save(
+            {
+                "rng_state":torch.get_rng_state(),
+                'epoch': epoch,
+                'state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, f)
+    print(f"Successfully initialized Model with run id {dj.run_id()}")
 
+@dj.Task.make(mode = "process", hyperparams = dj.Depend(num_workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
+def train(hyperparams):
+    t_start = time.time()
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    resources_path = os.path.join(base_path, "Resources")
+    run = init(hyperparams, os.path.join(resources_path,"%s_pretrained_models/%s.th" % (hyperparams["dataset"],hyperparams["architecture"]))).join()
+
+    if hyperparams["dataset"] == "cifar10":
+        model = cifar10_resnet.__dict__[hyperparams["architecture"]]()
+    elif hyperparams["dataset"] == "cifar100":
+        model = cifar100_resnet.__dict__[hyperparams["architecture"]]()
+    else:
+        raise Exception("Unknown dataset")
+    model = torch.nn.DataParallel(model).to(device)
+    
+    _, val_loader = DataLoader.get_train_valid_loader(
+        data_dir=os.path.join(hyperparams["data_dir"],hyperparams["dataset"]),
+        batch_size=hyperparams["batch_size"],
+        augment=True,
+        random_seed=hyperparams["seed"],
+        valid_size=0.1,
+        shuffle=True,
+        num_workers=hyperparams["workers"],
+        pin_memory=("cuda" in device),
+        dataset=hyperparams["dataset"]
+    )
+
+    val_acc = []
+    eta_val_acc = []
+    eta_val_acc_std = []
+
+
+    best_prec1 = 0.0
+    for i in range(0, hyperparams["n_epochs"]- hyperparams["start_epoch"]):
+        next_run = train_epoch(run, hyperparams).join()
+        if i % hyperparams["save_every"] != 0:
+            run.delete()
+        with next_run.open("model.th", "rb") as f:
+            checkpoint = torch.load(f)
+        model.load_state_dict(checkpoint["state_dict"])
+
+        prec1 = validate(val_loader, model)
+        mean_prec1, std_prec1 = validate_noisy(val_loader, model, eta_inf=hyperparams["eta_train"], eta_mode=hyperparams["eta_mode"], n_inf=3)
+
+        val_acc.append(prec1)
+        eta_val_acc.append(mean_prec1)
+        eta_val_acc_std.append(std_prec1)
+
+        if prec1 > best_prec1:
+            print("\t * New best: %.5f" % best_prec1)
+            checkpoint["val_acc"] = val_acc
+            checkpoint["eta_val_acc"] = eta_val_acc
+            checkpoint["eta_val_acc_std"] = eta_val_acc_std
+            with dj.open("best_checkpoint.th", "wb+") as f:
+                torch.save(checkpoint, f)
+
+        run = next_run
+    
+    test_loader = DataLoader.get_test_loader(
+        data_dir=os.path.join(hyperparams["data_dir"],hyperparams["dataset"]),
+        batch_size=128,
+        shuffle=False,
+        num_workers=hyperparams["workers"],
+        pin_memory=("cuda" in device),
+        dataset = hyperparams["dataset"]
+    )
+    # - Load the best model
+    with dj.open("best_checkpoint.th", "rb+") as f:
+        best_model = torch.load(f)
+    model.load_state_dict(best_model["state_dict"])
+    # - Get normal test acc.
+    prec1_test = validate(test_loader, model)
+    # - Get noisy test acc. using eta_inf = eta_train
+    prec1_test_noisy_mean, prec1_test_noisy_std = validate_noisy(test_loader, model,  eta_inf=hyperparams["eta_train"], eta_mode=hyperparams["eta_mode"], n_inf=25) 
+    time_passed = time.time() - t_start
+    print("Training finished in %.4f hours. Test accuracy is %.5f. Run Id = %s" %\
+        (time_passed / 3600., float(prec1_test),dj.run_id()))
+    log("test_acc", float(prec1_test))
+    log("noisy_test_acc_mean", float(prec1_test_noisy_mean))
+    log("noisy_test_acc_std", float(prec1_test_noisy_std))
+    log("best_noisy_val_acc", float(best_prec1))
+    log("time_passed", float(time_passed / 3600.))
+    log("completed", True)
+    
+@dj.Task.make(mode = "process", hyperparams = dj.Depend(num_workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore, n_epochs = dj.Ignore))
+def train_epoch(previous_epoch, hyperparams):
     @torch.no_grad()
     def clip_weights(model):
-        if args.clipping_alpha == 0.0 : return 
+        if hyperparams["clipping_alpha"] == 0.0 : return 
         for n,v in model.named_parameters():
             if "bn" in n or "bias" in n : continue
-            clamp_val = float(args.clipping_alpha * torch.std(v.view(-1), dim=0))
+            clamp_val = float(hyperparams["clipping_alpha"] * torch.std(v.view(-1), dim=0))
             mean_v = float(torch.mean(v.view(-1), dim=0))
             v.clamp_(min=mean_v-clamp_val, max=mean_v+clamp_val)
 
-    # - Clip the weights initially. No-op if no clipping
-    p1_nc = validate(val_loader, model, args=args)
-    clip_weights(model)
-    p1_wc = validate(val_loader, model, args=args)
-    mean_prec1, std_prec1 = validate_noisy(val_loader, model, args, eta_inf=args.eta_train, eta_mode=args.eta_mode, n_inf=3)
-    print("After loading, with clipping@%.2f %.2f w/o %.2f noisy: %.2fpm%.2f" %\
-        (args.clipping_alpha,p1_wc,p1_nc,mean_prec1,std_prec1))
-
-    for epoch in range(args.start_epoch, args.n_epochs):
-
-        # train for one epoch
-        print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-        train(train_loader, model, criterion, optimizer, epoch, args=args, clip_fn=clip_weights)
+    train_loader, _ = DataLoader.get_train_valid_loader(
+        data_dir=os.path.join(hyperparams["data_dir"],hyperparams["dataset"]),
+        batch_size=hyperparams["batch_size"],
+        augment=True,
+        random_seed=hyperparams["seed"],
+        valid_size=0.1,
+        shuffle=True,
+        num_workers=hyperparams["workers"],
+        pin_memory=("cuda" in device),
+        dataset=hyperparams["dataset"]
+    )
+    
+    if hyperparams["dataset"] == "cifar10":
+        model = cifar10_resnet.__dict__[hyperparams["architecture"]]()
+    elif hyperparams["dataset"] == "cifar100":
+        model = cifar100_resnet.__dict__[hyperparams["architecture"]]()
+    else:
+        raise Exception("Unknown dataset")
+    model = torch.nn.DataParallel(model).to(device)
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        hyperparams["lr"],
+        momentum=hyperparams["momentum"],
+        nesterov=True,
+        weight_decay=hyperparams["weight_decay"]
+    )
+    with previous_epoch.open("checkpoint.th", "rb") as f:
+        checkpoint = torch.load(f)
+    model.load_state_dict(checkpoint["state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    epoch = checkpoint["epoch"]
+    torch.set_rng_state(checkpoint["rng_state"])
+    
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer,
+        milestones=[60, 120, 160],
+        gamma=0.2,
+        last_epoch=-1
+    )
+    
+    for _ in range(epoch):
         lr_scheduler.step()
+    
+    nat_loss = nn.CrossEntropyLoss(reduction="mean")
 
-        prec1 = validate(val_loader, model, args=args)
-        mean_prec1, std_prec1 = validate_noisy(val_loader, model, args, eta_inf=args.eta_train, eta_mode=args.eta_mode, n_inf=3)
+    if hyperparams["gamma"] > 0.0:
+        criterion = AWP_Loss(
+            model=model,
+            loss_func=nat_loss,
+            device=device,
+            n_attack_steps=hyperparams["n_attack_steps"],
+            mismatch_level=hyperparams["attack_size_mismatch"],
+            initial_std=hyperparams["initial_std"],
+            gamma=hyperparams["gamma"],
+            eps_pga=hyperparams["eps_pga"],
+            burn_in=hyperparams["burn_in"]
+        )
+    elif hyperparams["beta_robustness"] >= 999:
+        criterion = AMP_Loss(
+            model = model,
+            loss_func=nat_loss,
+            device = device,
+            n_attack_steps= hyperparams["n_attack_steps"],
+            epsilon = hyperparams["attack_size_mismatch"], #misnomer
+            inner_lr = hyperparams["inner_lr"]
+        )
+    else:
+        criterion = AdversarialLoss(
+            model=model,
+            natural_loss=nat_loss,
+            robustness_loss=torch.nn.KLDivLoss(reduction="batchmean"),
+            device=device,
+            n_attack_steps=hyperparams["n_attack_steps"],
+            mismatch_level=hyperparams["attack_size_mismatch"],
+            initial_std=hyperparams["initial_std"],
+            beta_robustness=hyperparams["beta_robustness"],
+            burn_in=hyperparams["burn_in"]
+        )
 
-        log(args.session_id, "val_acc", float(prec1))
-        log(args.session_id, "eta_val_acc", float(mean_prec1))
-        log(args.session_id, "eta_val_acc_std", float(std_prec1))
-
-        # remember best prec@1 and save checkpoint
-        is_best = mean_prec1 > best_prec1
-        best_prec1 = max(mean_prec1, best_prec1)
-
-        if epoch > 0 and epoch % args.save_every == 0:
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'best_prec1': best_prec1,
-            }, filename=checkpoint_save_path)
-
-        if is_best:
-            print("\t * New best: %.5f" % best_prec1)
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'best_prec1': best_prec1,
-            }, filename=model_save_path)
-
-    # - Load the best model
-    best_model = torch.load(model_save_path)
-    model.load_state_dict(best_model["state_dict"])
-    # - Get normal test acc.
-    prec1_test = validate(test_loader, model, args=args)
-    # - Get noisy test acc. using eta_inf = eta_train
-    prec1_test_noisy_mean, prec1_test_noisy_std = validate_noisy(test_loader, model, args, args.eta_train, args.eta_mode, n_inf=25) 
-    time_passed = time.time() - t_start
-    print("Training finished in %.4f hours. Test accuracy is %.5f. Saved under %s" %\
-        (time_passed / 3600., float(prec1_test),model_save_path))
-    log(args.session_id, "test_acc", float(prec1_test))
-    log(args.session_id, "noisy_test_acc_mean", float(prec1_test_noisy_mean))
-    log(args.session_id, "noisy_test_acc_std", float(prec1_test_noisy_std))
-    log(args.session_id, "best_noisy_val_acc", float(best_prec1))
-    log(args.session_id, "time_passed", float(time_passed / 3600.))
-    log(args.session_id, "completed", True)
-
-
-def train(train_loader, model, criterion, optimizer, epoch, args, clip_fn):
     """
     Run one train epoch
     """
@@ -216,6 +263,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args, clip_fn):
     model.train()
 
     end = time.time()
+
+    print_freq = len(train_loader) // 10
     for i, (input, target) in enumerate(train_loader):
 
         # measure data loading time
@@ -229,13 +278,13 @@ def train(train_loader, model, criterion, optimizer, epoch, args, clip_fn):
                 model=model,
                 X=input_var,
                 y=target_var,
-                epoch=epoch - args.start_epoch
+                epoch=epoch
             )
 
         optimizer.step()
         optimizer.zero_grad()
 
-        clip_fn(model)
+        clip_weights(model)
 
         with torch.no_grad():
             output = model(input_var) #! This is inefficient, right?
@@ -251,7 +300,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, clip_fn):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % args.print_freq == 0:
+        if i % print_freq == 0:
             print('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
@@ -259,9 +308,17 @@ def train(train_loader, model, criterion, optimizer, epoch, args, clip_fn):
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                       epoch, i, len(train_loader), batch_time=batch_time,
                       data_time=data_time, loss=losses, top1=top1))
+        
+    with dj.open("checkpoint.th", "wb+") as f:
+        torch.save({
+            "rng_state":torch.get_rng_state(),
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()
+        }, f)
 
 
-def validate_noisy(val_loader, model, args, eta_inf, eta_mode, n_inf):
+def validate_noisy(val_loader, model, eta_inf, eta_mode, n_inf):
     accs = torch.empty(size=(n_inf,))
     for i in range(n_inf):
         model_noisy = deepcopy(model)
@@ -271,12 +328,12 @@ def validate_noisy(val_loader, model, args, eta_inf, eta_mode, n_inf):
                 noise = eta_inf * 0.5*(v.max()-v.min()) * torch.randn_like(v) if eta_mode == "range"\
                     else eta_inf * v.abs() * torch.randn_like(v)
                 v.add_(noise.detach())
-        accs[i] = validate(val_loader, model_noisy, args)
+        accs[i] = validate(val_loader, model_noisy)
     print(" * Noisy Prec@1 %.2f" % float(accs.mean()))
     return (accs.mean(), accs.std())
 
 
-def validate(val_loader, model, args):
+def validate(val_loader, model):
     """
     Run evaluation
     """
@@ -311,9 +368,6 @@ def validate(val_loader, model, args):
 
     return top1.avg
 
-def save_checkpoint(state, filename):
-    torch.save(state, filename)
-
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):
@@ -346,7 +400,3 @@ def accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
-
-
-if __name__ == '__main__':
-    main()
