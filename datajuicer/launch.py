@@ -37,7 +37,7 @@ def launch(context):
     if context["mode"] == "bsub":
         run_string = " ".join(["bsub", *context["mode_args"], f'"{command}"'])
         print(run_string)
-        subprocess.run(["bsub", *context["mode_args"], f'"{command}"'])
+        subprocess.run(["bsub", *context["mode_args"], *command.split()])
         while(True):
             if context["cache"].is_done(context["task_name"], context["task_version"], context["run_id"]):
                 break
