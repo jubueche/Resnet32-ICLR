@@ -6,6 +6,7 @@ import datajuicer.cache as cache
 import dill
 import time
 import json
+import pathlib
 
 def _format(val):
     if type(val) is str:
@@ -137,7 +138,7 @@ class LocalCache(cache.BaseCache):
     def __init__(self, root = "dj_runs"):
         super().__init__()
         self.root = root
-        self.db_file = os.path.join(self.root, "runs.db")
+        self.db_file = str(pathlib.Path(os.path.join(self.root, "runs.db")).resolve())
         datajuicer.cache.make_dir(self.db_file)
         #self.lock = threading.RLock()
     
@@ -151,13 +152,13 @@ class LocalCache(cache.BaseCache):
                 SELECT 
                     name
                 FROM 
-                    sqlite_schema
+                    sqlite_master
                 WHERE 
                     type ='table' AND 
                     name NOT LIKE 'sqlite_%';
                 ''', conn)
             return [tn[0] for tn in task_names]
-        except OperationalError:
+        except OperationalError as e:
             return []
 
     def all_runs(self):

@@ -218,7 +218,19 @@ class Run(threading.Thread):
         self.task = pseudo_task
         self.run_id = state["run_id"]
         self.kwargs = state["kwargs"]
-        self.unique_id = state["unique_id"]
+        self.unique_id = utils.rand_id()#state["unique_id"]
+        pseudo_parent = Namespace()
+        if not state["parent_task_name"] is None:
+            pseudo_parent.task = Namespace()
+            pseudo_parent.task.name = state["parent_task_name"]
+            pseudo_parent.task.version = state["parent_task_version"]
+            pseudo_parent.run_id = state["parent_run_id"]
+            pseudo_parent.incognito = state["parent_incognito"]
+        
+        self.parent = pseudo_parent
+        self.force = state["force"]
+        self.incognito = state["incognito"]
+
     
     def delete(self):
         self.task.cache.delete_run(self.task.name, self.task.version, self.run_id)
@@ -293,7 +305,6 @@ class Task:
         datajuicer.GLOBAL.task_versions[self.name] = self.version
         datajuicer.GLOBAL.task_caches[self.name] = self.cache
 
-
     def _run(self):
         def check_run_deps(cache, name, version, rid):
             if datajuicer.GLOBAL.task_versions[name] != version:
@@ -321,10 +332,9 @@ class Task:
                         self.resource_lock.release()
                         while not self.cache.is_done(self.name, self.version, rid) and check_run_deps(self.cache, self.name, self.version, rid):
                             time.sleep(0.5)
-
+                        self.resource_lock.acquire()
                         if check_run_deps(self.cache, self.name, self.version, rid):
                             threading.current_thread().assign_run_id(rid)
-                            self.resource_lock.acquire()
                             return self.cache.get_result(self.name, self.version, rid)
                         redo = True
                         break

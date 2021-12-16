@@ -16,8 +16,13 @@ import datajuicer as dj
 import json
 import numpy as np
 
-@dj.Task.make(mode="process", hyperparams=dj.Depend("dataset", "architecture", "momentum", "seed", "weight_decay", "start_epoch"))
-def init(hyperparams, pretrained_path):
+@dj.Task.make(mode="process", hyperparams=dj.Depend("dataset", "architecture", "momentum", "seed", "weight_decay", "start_epoch", "pretrained"))
+def init(hyperparams):
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    resources_path = os.path.join(base_path, "Resources")
+    pretrained_path = None
+    if hyperparams["pretrained"] :
+        pretrained_path = os.path.join(resources_path,"%s_pretrained_models/%s.th" % (hyperparams["dataset"],hyperparams["architecture"]))
     if pretrained_path is not None:
         print(f"Loading pretrained Model from path {pretrained_path}")
         if os.path.isfile(pretrained_path):
@@ -65,15 +70,27 @@ def init(hyperparams, pretrained_path):
             }, f)
     print(f"Successfully initialized Model with run id {dj.run_id()}")
 
-@dj.Task.make(mode = "bsub", mode_args=["-q","prod.short","-R","\"rusage[ngpus_excl_p=1]\"","-Is"], hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
-def train(hyperparams):
-    t_start = time.time()
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    resources_path = os.path.join(base_path, "Resources")
-    path = None
-    if hyperparams["pretrained"] :
-        path = os.path.join(resources_path,"%s_pretrained_models/%s.th" % (hyperparams["dataset"],hyperparams["architecture"]))
-    run = init(hyperparams, path).join()
+@dj.Task.make(hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore, n_epochs=dj.Ignore))
+def _train(hyperparams, current_epoch):
+    
+    if current_epoch == hyperparams["start_epoch"]:
+        run = init(hyperparams).join()
+        data = {
+            "val_acc":[],
+            "eta_val_acc":[],
+            "eta_val_acc_std":[],
+            "best_prec1":0.0,
+            "best_epoch":0
+        }
+    else:
+        prev_train = _train(hyperparams, current_epoch - 1)
+        run, data = prev_train.get()
+        if (current_epoch-1) % hyperparams["save_every"] != 0 and data["best_epoch"] != current_epoch - 1:
+            prev_train.delete()
+    new_run = train_epoch(run, hyperparams).join()
+
+    if (current_epoch-1) % hyperparams["save_every"] != 0 and data["best_epoch"] != current_epoch - 1:
+        run.delete()
 
     if hyperparams["dataset"] == "cifar10":
         model = cifar10_resnet.__dict__[hyperparams["architecture"]]()
@@ -95,37 +112,44 @@ def train(hyperparams):
         dataset=hyperparams["dataset"]
     )
 
-    val_acc = []
-    eta_val_acc = []
-    eta_val_acc_std = []
+    with new_run.open("checkpoint.th", "rb") as f:
+        checkpoint = torch.load(f)
+    model.load_state_dict(checkpoint["state_dict"])
+
+    prec1 = validate(val_loader, model)
+    mean_prec1, std_prec1 = validate_noisy(val_loader, model, eta_inf=hyperparams["eta_train"], eta_mode=hyperparams["eta_mode"], n_inf=3)
+    data["val_acc"].append(prec1)
+    data["eta_val_acc"].append(mean_prec1)
+    data["eta_val_acc_std"].append(std_prec1)
+    if prec1 > data["best_prec1"]:
+        data["best_prec1"] = prec1
+        data["best_epoch"] = current_epoch
+    return new_run, data
 
 
-    best_prec1 = 0.0
-    for i in range(0, hyperparams["n_epochs"]- hyperparams["start_epoch"]):
-        next_run = train_epoch(run, hyperparams).join()
-        if i % hyperparams["save_every"] != 0:
-            run.delete()
-        with next_run.open("checkpoint.th", "rb") as f:
-            checkpoint = torch.load(f)
-        model.load_state_dict(checkpoint["state_dict"])
+@dj.Task.make(mode = "process", mode_args=["-q","prod.short","-R","\"rusage[ngpus_excl_p=1]\"","-Is"], hyperparams = dj.Depend(workers=dj.Ignore, data_dir=dj.Ignore, save_every=dj.Ignore))
+def train(hyperparams):
+    t_start = time.time()
 
-        prec1 = validate(val_loader, model)
-        mean_prec1, std_prec1 = validate_noisy(val_loader, model, eta_inf=hyperparams["eta_train"], eta_mode=hyperparams["eta_mode"], n_inf=3)
+    _, data = _train(hyperparams, hyperparams["n_epochs"]).get()
+    best_epoch, _ = _train(hyperparams,data["best_epoch"]).get()
 
-        val_acc.append(prec1)
-        eta_val_acc.append(mean_prec1)
-        eta_val_acc_std.append(std_prec1)
+    with best_epoch.open("checkpoint.th", "rb+") as f:
+        best_checkpoint = torch.load(f)
 
-        if prec1 > best_prec1:
-            best_prec1 = prec1
-            print("\t * New best: %.5f" % best_prec1)
-            checkpoint["val_acc"] = val_acc
-            checkpoint["eta_val_acc"] = eta_val_acc
-            checkpoint["eta_val_acc_std"] = eta_val_acc_std
-            with dj.open("best_checkpoint.th", "wb+") as f:
-                torch.save(checkpoint, f)
 
-        run = next_run
+    with dj.open("checkpoint.th", "wb+") as f:
+        torch.save({**best_checkpoint, **data}, f)
+
+    
+    
+    if hyperparams["dataset"] == "cifar10":
+        model = cifar10_resnet.__dict__[hyperparams["architecture"]]()
+    elif hyperparams["dataset"] == "cifar100":
+        model = cifar100_resnet.__dict__[hyperparams["architecture"]]()
+    else:
+        raise Exception("Unknown dataset")
+    model = torch.nn.DataParallel(model).to(device)
     
     test_loader = DataLoader.get_test_loader(
         data_dir=os.path.join(hyperparams["data_dir"],hyperparams["dataset"]),
@@ -135,8 +159,9 @@ def train(hyperparams):
         pin_memory=("cuda" in device),
         dataset = hyperparams["dataset"]
     )
+
     # - Load the best model
-    with dj.open("best_checkpoint.th", "rb+") as f:
+    with best_epoch.open("checkpoint.th", "rb+") as f:
         best_model = torch.load(f)
     model.load_state_dict(best_model["state_dict"])
     # - Get normal test acc.
